@@ -1,0 +1,14 @@
+### GET all items
+GET http://localhost:8080/items
+Accept: application/json
+
+### POST create an item
+POST http://localhost:8080/items
+Content-Type: application/json
+
+{
+  "name": "Notebook",
+  "quantity": 5
+}
+
+
