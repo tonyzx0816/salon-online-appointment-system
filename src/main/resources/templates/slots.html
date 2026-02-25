@@ -1,0 +1,22 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<body>
+<h1>Available Slots</h1>
+<table border="1">
+    <tr>
+        <th>ID</th>
+        <th>Provider</th>
+        <th>Start</th>
+        <th>End</th>
+        <th>Action</th>
+    </tr>
+    <tr th:each="slot : ${slots}">
+        <td th:text="${slot.slotId}">1</td>
+        <td th:text="${slot.providerName}">Jane Doe</td>
+        <td th:text="${slot.startTime}">Time</td>
+        <td th:text="${slot.endTime}">Time</td>
+        <td><a th:href="@{/book(slotId=${slot.slotId})}">Book</a></td>
+    </tr>
+</table>
+</body>
+</html>

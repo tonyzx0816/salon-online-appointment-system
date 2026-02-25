@@ -160,3 +160,25 @@ CREATE TABLE messages
     KEY             idx_msg_conversation_time (conversation_id, sent_at),
     KEY             idx_msg_sender_time (sender_id, sent_at)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+-- Add a Test User (Provider)
+INSERT INTO users (name, email, phone, password_hash, role)
+VALUES ('Jane Doe', 'jane@salon.com', '555-0101', 'hashed_pass', 'PROVIDER');
+
+-- Add a Test User (Customer)
+INSERT INTO users (name, email, phone, password_hash, role)
+VALUES ('John Smith', 'john@gmail.com', '555-0202', 'hashed_pass', 'CUSTOMER');
+
+-- Add the Provider Profile (linked to Jane Doe, user_id=1)
+INSERT INTO providers (user_id, display_name, active)
+VALUES (1, 'Jane''s Hair Styling', TRUE);
+
+-- Add a Service
+INSERT INTO services (name, duration_minutes, price, active)
+VALUES ('Haircut', 60, 5000, TRUE);
+
+-- Add some Open Availability Slots (provider_id=1)
+INSERT INTO availability_slots (provider_id, start_time, end_time, status)
+VALUES (1, '2026-02-25 10:00:00', '2026-02-25 11:00:00', 'OPEN'),
+       (1, '2026-02-25 11:00:00', '2026-02-25 12:00:00', 'OPEN'),
+       (1, '2026-02-25 14:00:00', '2026-02-25 15:00:00', 'OPEN');

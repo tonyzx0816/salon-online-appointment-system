@@ -1,13 +1,13 @@
 package edu.sjsu.cmpe172.salonOnlineAppointmentSystem.controller;
 
+import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.RestController;
 
-@RestController
+@Controller
 public class HomeController {
 
     @GetMapping("/")
     public String home() {
-        return "API is running. Try /items";
+        return "index"; // refers to templates/index.html
     }
 }
