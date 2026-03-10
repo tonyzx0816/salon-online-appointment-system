@@ -3,6 +3,12 @@
 <body>
 <h1>Booking Confirmed!</h1>
 <p>Success! Your appointment has been scheduled.</p>
+<div th:if="${appointment != null}" xmlns:th="http://www.thymeleaf.org">
+    <p>Appointment ID: <span th:text="${appointment.appointmentId}">0</span></p>
+    <p>Provider ID: <span th:text="${appointment.providerId}">0</span></p>
+    <p>Start: <span th:text="${appointment.startTime}">start</span></p>
+    <p>End: <span th:text="${appointment.endTime}">end</span></p>
+</div>
 <a href="/">Return to Home</a>
 </body>
 </html>

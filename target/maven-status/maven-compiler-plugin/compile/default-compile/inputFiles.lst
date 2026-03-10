@@ -1,4 +1,5 @@
 /Users/lizhongxian/Desktop/cmpe172-starter-demo/src/main/java/edu/sjsu/cmpe172/salonOnlineAppointmentSystem/SalonOnlineAppointmentApplication.java
+/Users/lizhongxian/Desktop/cmpe172-starter-demo/src/main/java/edu/sjsu/cmpe172/salonOnlineAppointmentSystem/controller/AppointmentController.java
 /Users/lizhongxian/Desktop/cmpe172-starter-demo/src/main/java/edu/sjsu/cmpe172/salonOnlineAppointmentSystem/controller/HomeController.java
 /Users/lizhongxian/Desktop/cmpe172-starter-demo/src/main/java/edu/sjsu/cmpe172/salonOnlineAppointmentSystem/controller/ItemController.java
 /Users/lizhongxian/Desktop/cmpe172-starter-demo/src/main/java/edu/sjsu/cmpe172/salonOnlineAppointmentSystem/entity/AppointmentEntity.java
@@ -9,5 +10,12 @@
 /Users/lizhongxian/Desktop/cmpe172-starter-demo/src/main/java/edu/sjsu/cmpe172/salonOnlineAppointmentSystem/entity/ServiceEntity.java
 /Users/lizhongxian/Desktop/cmpe172-starter-demo/src/main/java/edu/sjsu/cmpe172/salonOnlineAppointmentSystem/entity/UserEntity.java
 /Users/lizhongxian/Desktop/cmpe172-starter-demo/src/main/java/edu/sjsu/cmpe172/salonOnlineAppointmentSystem/model/Item.java
+/Users/lizhongxian/Desktop/cmpe172-starter-demo/src/main/java/edu/sjsu/cmpe172/salonOnlineAppointmentSystem/model/SlotDTO.java
+/Users/lizhongxian/Desktop/cmpe172-starter-demo/src/main/java/edu/sjsu/cmpe172/salonOnlineAppointmentSystem/repository/AppointmentRepository.java
+/Users/lizhongxian/Desktop/cmpe172-starter-demo/src/main/java/edu/sjsu/cmpe172/salonOnlineAppointmentSystem/repository/AvailabilitySlotRepository.java
 /Users/lizhongxian/Desktop/cmpe172-starter-demo/src/main/java/edu/sjsu/cmpe172/salonOnlineAppointmentSystem/repository/ItemRepository.java
+/Users/lizhongxian/Desktop/cmpe172-starter-demo/src/main/java/edu/sjsu/cmpe172/salonOnlineAppointmentSystem/repository/ProviderRepository.java
+/Users/lizhongxian/Desktop/cmpe172-starter-demo/src/main/java/edu/sjsu/cmpe172/salonOnlineAppointmentSystem/repository/UserRepository.java
+/Users/lizhongxian/Desktop/cmpe172-starter-demo/src/main/java/edu/sjsu/cmpe172/salonOnlineAppointmentSystem/service/AppointmentService.java
 /Users/lizhongxian/Desktop/cmpe172-starter-demo/src/main/java/edu/sjsu/cmpe172/salonOnlineAppointmentSystem/service/ItemService.java
+/Users/lizhongxian/Desktop/cmpe172-starter-demo/src/main/java/edu/sjsu/cmpe172/salonOnlineAppointmentSystem/service/SlotService.java
