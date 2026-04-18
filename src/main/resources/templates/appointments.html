@@ -12,6 +12,7 @@
         <th>Start</th>
         <th>End</th>
         <th>Status</th>
+        <th>Mock notify</th>
     </tr>
     <tr th:each="appt : ${appointments}">
         <td th:text="${appt.appointmentId}">1</td>
@@ -21,11 +22,47 @@
         <td th:text="${appt.startTime}">Time</td>
         <td th:text="${appt.endTime}">Time</td>
         <td th:text="${appt.status}">BOOKED</td>
+        <td>
+            <button type="button" class="btn-mock-notify" th:attr="data-appointment-id=${appt.appointmentId}">
+                POST → mock vendor
+            </button>
+        </td>
     </tr>
 </table>
 
+<p><strong>Last response:</strong></p>
+<pre id="appointments-notify-result" style="background:#f5f5f5;padding:8px;max-width:40rem;white-space:pre-wrap;">(none yet)</pre>
+
 <br>
 <a href="/">Back to Home</a>
+<script>
+(function () {
+    var out = document.getElementById('appointments-notify-result');
+    document.querySelectorAll('.btn-mock-notify').forEach(function (btn) {
+        btn.addEventListener('click', function () {
+            var id = btn.getAttribute('data-appointment-id');
+            out.textContent = 'Calling /api/appointments/' + id + '/confirmation-notification …';
+            fetch('/api/appointments/' + id + '/confirmation-notification', { method: 'POST' })
+                .then(function (r) {
+                    return r.text().then(function (t) {
+                        if (!r.ok) {
+                            out.textContent = 'HTTP ' + r.status + '\n' + t;
+                            return;
+                        }
+                        try {
+                            out.textContent = JSON.stringify(JSON.parse(t), null, 2);
+                        } catch (e) {
+                            out.textContent = t;
+                        }
+                    });
+                })
+                .catch(function (e) {
+                    out.textContent = 'Request failed: ' + e;
+                });
+        });
+    });
+})();
+</script>
 </body>
 </html>
 
