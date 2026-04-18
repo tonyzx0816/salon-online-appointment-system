@@ -1,6 +1,7 @@
 package edu.sjsu.cmpe172.salonOnlineAppointmentSystem.entity;
 
 import org.springframework.data.annotation.Id;
+import org.springframework.data.annotation.Version;
 import org.springframework.data.relational.core.mapping.Table;
 
 import java.time.LocalDateTime;
@@ -9,6 +10,8 @@ import java.time.LocalDateTime;
 public record AvailabilitySlotEntity(
         @Id
         Integer slotId,
+        @Version
+        Integer version,
         Integer providerId,
         LocalDateTime startTime,
         LocalDateTime endTime,

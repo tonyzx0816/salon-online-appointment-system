@@ -1,0 +1,10 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<body>
+<p th:if="${errorMessage != null}" th:text="${errorMessage}"></p>
+
+<p>Please go back and select a different available slot.</p>
+<a href="/slots">Back to Available Slots</a>
+</body>
+</html>
+

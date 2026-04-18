@@ -38,10 +38,18 @@ public class AppointmentController {
     public String processBooking(
             @RequestParam Integer slotId,
             @RequestParam String customerName,
-            @RequestParam String customerEmail
+            @RequestParam String customerEmail,
+            Model model
     ) {
-        AppointmentEntity appt = appointmentService.book(slotId, customerName, customerEmail);
-        return "redirect:/confirmation?appointmentId=" + appt.appointmentId();
+        try {
+            AppointmentEntity appt = appointmentService.book(slotId, customerName, customerEmail);
+            return "redirect:/confirmation?appointmentId=" + appt.appointmentId();
+        } catch (IllegalStateException ex) {
+            // Concurrency conflict (double-book attempt): present a friendly page to the user.
+            model.addAttribute("slotId", slotId);
+            model.addAttribute("errorMessage", ex.getMessage());
+            return "unavailable";
+        }
     }
 
     @GetMapping("/confirmation")

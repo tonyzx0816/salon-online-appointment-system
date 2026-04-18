@@ -54,6 +54,7 @@ CREATE TABLE services
 CREATE TABLE availability_slots
 (
     slot_id     INT AUTO_INCREMENT PRIMARY KEY,
+    version     INT       NOT NULL DEFAULT 0,
     provider_id INT       NOT NULL,
     start_time  DATETIME  NOT NULL,
     end_time    DATETIME  NOT NULL,
@@ -179,6 +180,6 @@ VALUES ('Haircut', 60, 5000, TRUE);
 
 -- Add some Open Availability Slots (provider_id=1)
 INSERT INTO availability_slots (provider_id, start_time, end_time, status)
-VALUES (1, '2026-02-25 10:00:00', '2026-02-25 11:00:00', 'OPEN'),
-       (1, '2026-02-25 11:00:00', '2026-02-25 12:00:00', 'OPEN'),
-       (1, '2026-02-25 14:00:00', '2026-02-25 15:00:00', 'OPEN');
+VALUES (1, '2026-05-25 10:00:00', '2026-05-25 11:00:00', 'OPEN'),
+       (1, '2026-05-25 11:00:00', '2026-05-25 12:00:00', 'OPEN'),
+       (1, '2026-05-25 14:00:00', '2026-05-25 15:00:00', 'OPEN');

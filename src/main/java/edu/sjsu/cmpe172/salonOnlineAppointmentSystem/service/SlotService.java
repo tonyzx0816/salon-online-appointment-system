@@ -7,6 +7,7 @@ import edu.sjsu.cmpe172.salonOnlineAppointmentSystem.repository.AvailabilitySlot
 import edu.sjsu.cmpe172.salonOnlineAppointmentSystem.repository.ProviderRepository;
 import org.springframework.stereotype.Service;
 
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -23,7 +24,13 @@ public class SlotService {
     public List<SlotDTO> getOpenSlotsWithProviderNames() {
         List<AvailabilitySlotEntity> slots =
                 slotRepository.findByStatus(AvailabilitySlotEntity.Status.OPEN);
+        LocalDateTime now = LocalDateTime.now();
+
         return slots.stream().map(slot -> {
+            if (slot.startTime() == null || !slot.startTime().isAfter(now)) {
+                return null;
+            }
+
             // Find provider by ID, default to "Unknown" if not found
             String providerName = providerRepository.findById(slot.providerId())
                     .map(ProviderEntity::displayName)
@@ -35,6 +42,6 @@ public class SlotService {
                     slot.startTime(),
                     slot.endTime()
             );
-        }).collect(Collectors.toList());
+        }).filter(slot -> slot != null).collect(Collectors.toList());
     }
 }
