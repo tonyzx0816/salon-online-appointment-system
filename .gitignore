@@ -1,4 +1,5 @@
 .venv/
+.venv-m6/
 .DS_Store
 .idea/
 target/
