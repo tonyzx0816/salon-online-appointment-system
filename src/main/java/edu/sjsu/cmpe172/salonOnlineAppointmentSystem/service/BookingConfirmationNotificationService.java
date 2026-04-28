@@ -7,10 +7,14 @@ import edu.sjsu.cmpe172.salonOnlineAppointmentSystem.integration.notification.Bo
 import edu.sjsu.cmpe172.salonOnlineAppointmentSystem.integration.notification.BookingConfirmationNotificationResponse;
 import edu.sjsu.cmpe172.salonOnlineAppointmentSystem.repository.ProviderRepository;
 import edu.sjsu.cmpe172.salonOnlineAppointmentSystem.repository.UserRepository;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 
 @Service
 public class BookingConfirmationNotificationService {
+    private static final Logger log = LoggerFactory.getLogger(BookingConfirmationNotificationService.class);
+
     private final AppointmentService appointmentService;
     private final UserRepository userRepository;
     private final ProviderRepository providerRepository;
@@ -29,6 +33,7 @@ public class BookingConfirmationNotificationService {
     }
 
     public BookingConfirmationNotificationResponse dispatch(Integer appointmentId) {
+        log.info("notification.dispatch.start appointmentId={}", appointmentId);
         AppointmentEntity appt = appointmentService.getById(appointmentId);
         UserEntity customer = userRepository.findById(appt.customerId())
                 .orElseThrow(() -> new IllegalArgumentException("Customer not found: " + appt.customerId()));
@@ -45,6 +50,23 @@ public class BookingConfirmationNotificationService {
                 appt.endTime(),
                 "EMAIL"
         );
-        return notificationClient.send(request);
+        try {
+            BookingConfirmationNotificationResponse response = notificationClient.send(request);
+            log.info(
+                    "notification.dispatch.success appointmentId={} externalNotificationId={} status={}",
+                    appointmentId,
+                    response.notificationId(),
+                    response.status()
+            );
+            return response;
+        } catch (RuntimeException ex) {
+            log.error(
+                    "notification.dispatch.failed appointmentId={} reason={}",
+                    appointmentId,
+                    ex.getClass().getSimpleName(),
+                    ex
+            );
+            throw ex;
+        }
     }
 }
