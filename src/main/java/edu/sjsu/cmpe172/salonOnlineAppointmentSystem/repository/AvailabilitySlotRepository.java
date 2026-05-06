@@ -4,9 +4,16 @@ import edu.sjsu.cmpe172.salonOnlineAppointmentSystem.entity.AvailabilitySlotEnti
 import org.springframework.data.repository.CrudRepository;
 import org.springframework.stereotype.Repository;
 
+import java.time.LocalDateTime;
 import java.util.List;
 
 @Repository
 public interface AvailabilitySlotRepository extends CrudRepository<AvailabilitySlotEntity, Integer> {
     List<AvailabilitySlotEntity> findByStatus(AvailabilitySlotEntity.Status status);
+
+    List<AvailabilitySlotEntity> findByProviderIdAndStartTimeAndEndTime(
+            Integer providerId,
+            LocalDateTime startTime,
+            LocalDateTime endTime
+    );
 }

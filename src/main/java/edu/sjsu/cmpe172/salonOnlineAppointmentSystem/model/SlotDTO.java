@@ -5,6 +5,7 @@ import java.time.LocalDateTime;
 public record SlotDTO(
         Integer slotId,
         String providerName,
+        String serviceName,
         LocalDateTime startTime,
         LocalDateTime endTime
 ) {

@@ -56,6 +56,7 @@ CREATE TABLE availability_slots
     slot_id     INT AUTO_INCREMENT PRIMARY KEY,
     version     INT       NOT NULL DEFAULT 0,
     provider_id INT       NOT NULL,
+    service_id  INT NULL,
     start_time  DATETIME  NOT NULL,
     end_time    DATETIME  NOT NULL,
     status      ENUM('OPEN','BLOCKED') NOT NULL DEFAULT 'OPEN',
@@ -64,6 +65,11 @@ CREATE TABLE availability_slots
     CONSTRAINT fk_slots_provider
         FOREIGN KEY (provider_id) REFERENCES providers (provider_id)
             ON DELETE CASCADE
+            ON UPDATE CASCADE,
+
+    CONSTRAINT fk_slots_service
+        FOREIGN KEY (service_id) REFERENCES services (service_id)
+            ON DELETE SET NULL
             ON UPDATE CASCADE,
 
     CONSTRAINT chk_slots_time
@@ -162,24 +168,61 @@ CREATE TABLE messages
     KEY             idx_msg_sender_time (sender_id, sent_at)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
--- Add a Test User (Provider)
-INSERT INTO users (name, email, phone, password_hash, role)
-VALUES ('Jane Doe', 'jane@salon.com', '555-0101', 'hashed_pass', 'PROVIDER');
+-- Demo password for all seeded accounts: "password" (bcrypt)
+-- $2a$10$7EqJtq98hPqEX7fNZaFWoO7E3QnP8Kf7xN3fX2V6tPEjmvYzu3d8K
 
--- Add a Test User (Customer)
 INSERT INTO users (name, email, phone, password_hash, role)
-VALUES ('John Smith', 'john@gmail.com', '555-0202', 'hashed_pass', 'CUSTOMER');
+VALUES ('Jane Doe', 'jane@salon.com', '555-0101', '$2a$10$7EqJtq98hPqEX7fNZaFWoO7E3QnP8Kf7xN3fX2V6tPEjmvYzu3d8K', 'PROVIDER'),
+       ('John Smith', 'john@gmail.com', '555-0202', '$2a$10$7EqJtq98hPqEX7fNZaFWoO7E3QnP8Kf7xN3fX2V6tPEjmvYzu3d8K', 'CUSTOMER'),
+       ('Maria Garcia', 'maria@salon.com', '555-0303', '$2a$10$7EqJtq98hPqEX7fNZaFWoO7E3QnP8Kf7xN3fX2V6tPEjmvYzu3d8K', 'PROVIDER'),
+       ('Alex Kim', 'alex@salon.com', '555-0404', '$2a$10$7EqJtq98hPqEX7fNZaFWoO7E3QnP8Kf7xN3fX2V6tPEjmvYzu3d8K', 'PROVIDER'),
+       ('Sofia Lee', 'sofia@gmail.com', '555-0505', '$2a$10$7EqJtq98hPqEX7fNZaFWoO7E3QnP8Kf7xN3fX2V6tPEjmvYzu3d8K', 'CUSTOMER'),
+       ('Riley Chen', 'riley@gmail.com', '555-0606', '$2a$10$7EqJtq98hPqEX7fNZaFWoO7E3QnP8Kf7xN3fX2V6tPEjmvYzu3d8K', 'CUSTOMER');
 
--- Add the Provider Profile (linked to Jane Doe, user_id=1)
+-- user_id 1=Jane, 2=John, 3=Maria, 4=Alex, 5=Sofia, 6=Riley
 INSERT INTO providers (user_id, display_name, active)
-VALUES (1, 'Jane''s Hair Styling', TRUE);
+VALUES (1, 'Jane''s Hair Styling', TRUE),
+       (3, 'Maria''s Color Studio', TRUE),
+       (4, 'Alex Kim Grooming', TRUE);
 
--- Add a Service
 INSERT INTO services (name, duration_minutes, price, active)
-VALUES ('Haircut', 60, 5000, TRUE);
+VALUES ('Haircut', 60, 5000, TRUE),
+       ('Hair Color & Highlights', 120, 12000, TRUE),
+       ('Manicure', 45, 3500, TRUE),
+       ('Beard Trim', 30, 2500, TRUE),
+       ('Blowout & Style', 45, 4500, TRUE);
 
--- Add some Open Availability Slots (provider_id=1)
-INSERT INTO availability_slots (provider_id, start_time, end_time, status)
-VALUES (1, '2026-05-25 10:00:00', '2026-05-25 11:00:00', 'OPEN'),
-       (1, '2026-05-25 11:00:00', '2026-05-25 12:00:00', 'OPEN'),
-       (1, '2026-05-25 14:00:00', '2026-05-25 15:00:00', 'OPEN');
+-- service_id: 1=Haircut 60m, 2=Color 120m, 3=Manicure 45m, 4=Beard 30m, 5=Blowout 45m
+-- provider_id: 1=Jane, 2=Maria, 3=Alex — slot lengths match service duration
+INSERT INTO availability_slots (provider_id, service_id, start_time, end_time, status)
+VALUES
+    -- Jane — mixed cuts & styling
+    (1, 1, '2026-05-25 10:00:00', '2026-05-25 11:00:00', 'OPEN'),
+    (1, 5, '2026-05-25 11:15:00', '2026-05-25 12:00:00', 'OPEN'),
+    (1, 3, '2026-05-25 14:00:00', '2026-05-25 14:45:00', 'OPEN'),
+    (1, 1, '2026-05-26 09:00:00', '2026-05-26 10:00:00', 'OPEN'),
+    (1, 5, '2026-05-26 10:30:00', '2026-05-26 11:15:00', 'OPEN'),
+    (1, 3, '2026-05-26 13:00:00', '2026-05-26 13:45:00', 'OPEN'),
+    (1, 1, '2026-05-27 15:00:00', '2026-05-27 16:00:00', 'OPEN'),
+    (1, 1, '2026-06-02 10:00:00', '2026-06-02 11:00:00', 'OPEN'),
+    (1, 5, '2026-06-02 11:30:00', '2026-06-02 12:15:00', 'OPEN'),
+    (1, 3, '2026-06-03 14:00:00', '2026-06-03 14:45:00', 'OPEN'),
+    (1, 1, '2026-06-04 09:00:00', '2026-06-04 10:00:00', 'OPEN'),
+    -- Maria — color & highlights (2-hour blocks)
+    (2, 2, '2026-05-25 10:00:00', '2026-05-25 12:00:00', 'OPEN'),
+    (2, 2, '2026-05-26 13:00:00', '2026-05-26 15:00:00', 'OPEN'),
+    (2, 2, '2026-05-27 11:00:00', '2026-05-27 13:00:00', 'OPEN'),
+    (2, 2, '2026-05-28 09:00:00', '2026-05-28 11:00:00', 'OPEN'),
+    (2, 2, '2026-06-01 10:00:00', '2026-06-01 12:00:00', 'OPEN'),
+    (2, 2, '2026-06-03 09:00:00', '2026-06-03 11:00:00', 'OPEN'),
+    (2, 2, '2026-06-05 14:00:00', '2026-06-05 16:00:00', 'OPEN'),
+    -- Alex — beard trims & haircuts
+    (3, 4, '2026-05-25 09:00:00', '2026-05-25 09:30:00', 'OPEN'),
+    (3, 1, '2026-05-25 10:00:00', '2026-05-25 11:00:00', 'OPEN'),
+    (3, 4, '2026-05-25 14:00:00', '2026-05-25 14:30:00', 'OPEN'),
+    (3, 1, '2026-05-26 16:00:00', '2026-05-26 17:00:00', 'OPEN'),
+    (3, 4, '2026-05-27 12:00:00', '2026-05-27 12:30:00', 'OPEN'),
+    (3, 1, '2026-05-28 10:00:00', '2026-05-28 11:00:00', 'OPEN'),
+    (3, 4, '2026-05-29 15:00:00', '2026-05-29 15:30:00', 'OPEN'),
+    (3, 1, '2026-06-02 08:00:00', '2026-06-02 09:00:00', 'OPEN'),
+    (3, 4, '2026-06-04 11:00:00', '2026-06-04 11:30:00', 'OPEN');

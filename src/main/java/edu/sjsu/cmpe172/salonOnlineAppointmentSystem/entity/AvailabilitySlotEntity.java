@@ -13,6 +13,7 @@ public record AvailabilitySlotEntity(
         @Version
         Integer version,
         Integer providerId,
+        Integer serviceId,
         LocalDateTime startTime,
         LocalDateTime endTime,
         Status status,
