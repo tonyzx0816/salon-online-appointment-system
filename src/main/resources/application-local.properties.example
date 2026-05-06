@@ -1,0 +1,34 @@
+# Copy this file to: src/main/resources/application-local.properties
+# (that file is gitignored — do not commit passwords)
+#
+# Use plain values here (no ${your@email} — that is wrong; ${} is only for env var NAMES).
+#
+# These settings are only for WHO SENDS mail (your salon / app SMTP account).
+# Booking confirmations are always delivered TO each customer's signup email from the database.
+#
+# Run the app with the local profile, e.g.:
+#   mvn spring-boot:run -Dspring-boot.run.profiles=local
+#   or: export SPRING_PROFILES_ACTIVE=local && mvn spring-boot:run
+#
+# --- Gmail (personal / Google Workspace) ---
+# Use an App Password: Google Account → Security → 2-Step Verification → App passwords.
+# Do not use your normal Gmail password.
+
+spring.mail.host=smtp.gmail.com
+spring.mail.port=587
+spring.mail.username=YOUR_EMAIL@gmail.com
+spring.mail.password=YOUR_16_CHAR_APP_PASSWORD
+spring.mail.properties.mail.smtp.auth=true
+spring.mail.properties.mail.smtp.starttls.enable=true
+spring.mail.properties.mail.smtp.starttls.required=true
+spring.mail.properties.mail.smtp.connectiontimeout=15000
+spring.mail.properties.mail.smtp.timeout=15000
+
+# Shown as the sender; use the same Gmail address as spring.mail.username (required by Gmail)
+app.mail.from=Salon Booking <YOUR_EMAIL@gmail.com>
+
+# Also email the provider's staff user when someone books (only if that user's email is real)
+# app.mail.notify-provider=true
+
+# Uncomment for SMTP debug traces in the console (remove after it works)
+# spring.mail.properties.mail.debug=true
