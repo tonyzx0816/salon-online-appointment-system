@@ -1,5 +1,5 @@
 # Copy this file to: src/main/resources/application-local.properties
-# (that file is gitignored — do not commit passwords)
+# That path is listed in .gitignore — never commit it; keep passwords only there or in env vars.
 #
 # Use plain values here (no ${your@email} — that is wrong; ${} is only for env var NAMES).
 #

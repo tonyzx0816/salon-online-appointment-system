@@ -1,6 +1,8 @@
 .venv/
 .venv-m6/
-application-local.properties
 .DS_Store
 .idea/
 target/
+
+# Real SMTP credentials and other local overrides — copy from application-local.properties.example
+src/main/resources/application-local.properties
