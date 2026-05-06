@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<body>
+<h1>Login</h1>
+
+<p th:if="${param.error}" style="color:#b00020;">
+    Invalid email or password.
+</p>
+<p th:if="${param.logout}" style="color:#1b5e20;">
+    You have been logged out.
+</p>
+<p th:if="${param.registered}" style="color:#1b5e20;">
+    Account created successfully. Please sign in.
+</p>
+
+<form method="post" action="/login">
+    <label>Email:</label>
+    <input type="email" name="username" required placeholder="john@gmail.com"/>
+    <br><br>
+    <label>Password:</label>
+    <input type="password" name="password" required placeholder="password"/>
+    <br><br>
+    <button type="submit">Sign In</button>
+</form>
+
+<br>
+<a href="/signup">Create an account</a>
+<br><br>
+<a href="/">Back to Home</a>
+</body>
+</html>
