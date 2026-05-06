@@ -22,7 +22,7 @@ public class AppointmentNotificationRestController {
     }
 
     /**
-     * Triggers a booking confirmation through the mocked external notification service.
+     * Re-sends booking confirmation email (SMTP). Same path as after booking; requires mail to be configured.
      */
     @PostMapping("/{appointmentId}/confirmation-notification")
     public ResponseEntity<BookingConfirmationNotificationResponse> sendConfirmationNotification(
@@ -35,5 +35,10 @@ public class AppointmentNotificationRestController {
     @ExceptionHandler(IllegalArgumentException.class)
     public ResponseEntity<String> handleNotFound(IllegalArgumentException ex) {
         return ResponseEntity.status(HttpStatus.NOT_FOUND).body(ex.getMessage());
+    }
+
+    @ExceptionHandler(IllegalStateException.class)
+    public ResponseEntity<String> handleMailNotConfigured(IllegalStateException ex) {
+        return ResponseEntity.status(HttpStatus.SERVICE_UNAVAILABLE).body(ex.getMessage());
     }
 }

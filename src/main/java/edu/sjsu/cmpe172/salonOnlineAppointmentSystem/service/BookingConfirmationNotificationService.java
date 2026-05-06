@@ -3,13 +3,14 @@ package edu.sjsu.cmpe172.salonOnlineAppointmentSystem.service;
 import edu.sjsu.cmpe172.salonOnlineAppointmentSystem.entity.AppointmentEntity;
 import edu.sjsu.cmpe172.salonOnlineAppointmentSystem.entity.ProviderEntity;
 import edu.sjsu.cmpe172.salonOnlineAppointmentSystem.entity.UserEntity;
-import edu.sjsu.cmpe172.salonOnlineAppointmentSystem.integration.notification.BookingConfirmationNotificationRequest;
 import edu.sjsu.cmpe172.salonOnlineAppointmentSystem.integration.notification.BookingConfirmationNotificationResponse;
 import edu.sjsu.cmpe172.salonOnlineAppointmentSystem.repository.ProviderRepository;
 import edu.sjsu.cmpe172.salonOnlineAppointmentSystem.repository.UserRepository;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
+
+import java.util.Optional;
 
 @Service
 public class BookingConfirmationNotificationService {
@@ -18,20 +19,24 @@ public class BookingConfirmationNotificationService {
     private final AppointmentService appointmentService;
     private final UserRepository userRepository;
     private final ProviderRepository providerRepository;
-    private final BookingConfirmationNotificationClient notificationClient;
+    private final BookingConfirmationMailService mailService;
 
     public BookingConfirmationNotificationService(
             AppointmentService appointmentService,
             UserRepository userRepository,
             ProviderRepository providerRepository,
-            BookingConfirmationNotificationClient notificationClient
+            BookingConfirmationMailService mailService
     ) {
         this.appointmentService = appointmentService;
         this.userRepository = userRepository;
         this.providerRepository = providerRepository;
-        this.notificationClient = notificationClient;
+        this.mailService = mailService;
     }
 
+    /**
+     * Sends booking confirmation only via SMTP ({@link BookingConfirmationMailService}).
+     * Requires {@code spring.mail.host} and a From address ({@code app.mail.from} or {@code spring.mail.username}).
+     */
     public BookingConfirmationNotificationResponse dispatch(Integer appointmentId) {
         log.info("notification.dispatch.start appointmentId={}", appointmentId);
         AppointmentEntity appt = appointmentService.getById(appointmentId);
@@ -40,33 +45,18 @@ public class BookingConfirmationNotificationService {
         ProviderEntity provider = providerRepository.findById(appt.providerId())
                 .orElseThrow(() -> new IllegalArgumentException("Provider not found: " + appt.providerId()));
 
-        BookingConfirmationNotificationRequest request = new BookingConfirmationNotificationRequest(
-                appt.appointmentId(),
-                customer.name(),
-                customer.email(),
-                provider.displayName(),
-                appt.serviceId(),
-                appt.startTime(),
-                appt.endTime(),
-                "EMAIL"
-        );
-        try {
-            BookingConfirmationNotificationResponse response = notificationClient.send(request);
-            log.info(
-                    "notification.dispatch.success appointmentId={} externalNotificationId={} status={}",
-                    appointmentId,
-                    response.notificationId(),
-                    response.status()
+        Optional<String> sentId = mailService.sendBookingConfirmation(appt, customer, provider);
+        if (sentId.isEmpty()) {
+            throw new IllegalStateException(
+                    "Confirmation email was not sent: set app.mail.from or spring.mail.username to a valid From address."
             );
-            return response;
-        } catch (RuntimeException ex) {
-            log.error(
-                    "notification.dispatch.failed appointmentId={} reason={}",
-                    appointmentId,
-                    ex.getClass().getSimpleName(),
-                    ex
-            );
-            throw ex;
         }
+
+        log.info(
+                "notification.dispatch.success appointmentId={} channel=smtp notificationId={}",
+                appointmentId,
+                sentId.get()
+        );
+        return new BookingConfirmationNotificationResponse(sentId.get(), "SENT");
     }
 }
