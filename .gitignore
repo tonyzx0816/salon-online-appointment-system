@@ -6,3 +6,4 @@ target/
 
 # Real SMTP credentials and other local overrides — copy from application-local.properties.example
 src/main/resources/application-local.properties
+.env
