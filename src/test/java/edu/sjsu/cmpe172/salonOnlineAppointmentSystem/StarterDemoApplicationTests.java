@@ -1,9 +1,11 @@
 package edu.sjsu.cmpe172.salonOnlineAppointmentSystem;
 
 import edu.sjsu.cmpe172.salonOnlineAppointmentSystem.controller.HomeController;
+import edu.sjsu.cmpe172.salonOnlineAppointmentSystem.repository.UserRepository;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.webmvc.test.autoconfigure.WebMvcTest;
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
@@ -12,6 +14,9 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 @WebMvcTest(HomeController.class)
 class StarterDemoApplicationTests {
+    @MockitoBean
+    private UserRepository userRepository;
+
     @Autowired
     private MockMvc mockMvc;
 

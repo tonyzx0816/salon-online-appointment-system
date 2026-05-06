@@ -20,15 +20,15 @@ class AppointmentNotificationRestControllerTest {
             .build();
 
     @Test
-    void sendConfirmationReturnsVendorResponse() throws Exception {
+    void sendConfirmationReturnsSentResponse() throws Exception {
         confirmationNotificationService.response =
-                new BookingConfirmationNotificationResponse("ext-1-abcdef12", "ACCEPTED");
+                new BookingConfirmationNotificationResponse("email-1-abcdef12", "SENT");
         confirmationNotificationService.error = null;
 
         mockMvc.perform(post("/api/appointments/1/confirmation-notification"))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.notificationId").value("ext-1-abcdef12"))
-                .andExpect(jsonPath("$.status").value("ACCEPTED"));
+                .andExpect(jsonPath("$.notificationId").value("email-1-abcdef12"))
+                .andExpect(jsonPath("$.status").value("SENT"));
     }
 
     @Test
