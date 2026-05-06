@@ -1,0 +1,406 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8"/>
+    <title>Chat</title>
+    <style>
+        body { font-family: system-ui, sans-serif; max-width: 36rem; margin: 1.5rem auto; padding: 0 1rem; }
+        #thread-meta { color: #444; margin-bottom: 0.5rem; }
+        #messages {
+            display: flex;
+            flex-direction: column;
+            gap: 0.65rem;
+            border: 1px solid #ccc;
+            border-radius: 8px;
+            height: 22rem;
+            overflow-y: auto;
+            padding: 0.75rem;
+            background: #f5f5f5;
+            margin-bottom: 0.75rem;
+        }
+        .msg-row {
+            display: flex;
+            max-width: 100%;
+        }
+        .msg-row.mine {
+            justify-content: flex-end;
+        }
+        .msg-row.theirs {
+            justify-content: flex-start;
+        }
+        .msg-bubble {
+            width: fit-content;
+            max-width: 85%;
+            padding: 0.5rem 0.75rem;
+            border-radius: 12px;
+            line-height: 1.4;
+            white-space: pre-wrap;
+            word-break: break-word;
+            box-shadow: 0 1px 2px rgba(0,0,0,0.06);
+        }
+        .msg-bubble.mine {
+            background: #1976d2;
+            color: #fff;
+            border-bottom-right-radius: 4px;
+        }
+        .msg-bubble.theirs {
+            background: #fff;
+            color: #222;
+            border: 1px solid #ddd;
+            border-bottom-left-radius: 4px;
+        }
+        .sender-label {
+            font-size: 0.72rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.04em;
+            margin-bottom: 0.35rem;
+            opacity: 0.95;
+        }
+        .msg-bubble.mine .sender-label { color: rgba(255,255,255,0.95); }
+        .msg-bubble.theirs .sender-label { color: #1565c0; }
+        .bubble-body { font-size: 0.95rem; }
+        .bubble-time {
+            font-size: 0.68rem;
+            margin-top: 0.35rem;
+            opacity: 0.8;
+        }
+        .msg-bubble.mine .bubble-time { color: rgba(255,255,255,0.85); }
+        .msg-bubble.theirs .bubble-time { color: #666; }
+        #status { color: #b00020; min-height: 1.25rem; margin-bottom: 0.5rem; }
+        #composer { display: flex; gap: 0.5rem; }
+        #composer input[type="text"] { flex: 1; padding: 0.5rem; }
+        #composer button { padding: 0.5rem 1rem; }
+        #booking-picker-wrap {
+            margin-bottom: 1rem;
+            padding: 0.75rem;
+            background: #f0f4f8;
+            border-radius: 8px;
+            border: 1px solid #c5d4e0;
+        }
+        #booking-picker-wrap label {
+            display: block;
+            font-size: 0.85rem;
+            font-weight: 600;
+            margin-bottom: 0.35rem;
+            color: #333;
+        }
+        #booking-picker {
+            width: 100%;
+            max-width: 100%;
+            padding: 0.5rem;
+            font-size: 0.95rem;
+        }
+    </style>
+</head>
+<body>
+<h1>Messages</h1>
+<div id="booking-picker-wrap" style="display:none;">
+    <label for="booking-picker">Which booking is this conversation for?</label>
+    <select id="booking-picker"></select>
+</div>
+<p id="chat-headline" style="color:#555;font-size:0.95rem;min-height:1.25rem;"></p>
+<p id="status"></p>
+<p id="thread-meta"></p>
+<div id="messages" aria-live="polite"></div>
+<form id="composer-form">
+    <div id="composer">
+        <input id="msg-input" type="text" autocomplete="off" placeholder="Type a message…" disabled/>
+        <button type="submit" id="btn-send" disabled>Send</button>
+    </div>
+</form>
+<p style="margin-top:1.25rem;"><a href="/">Home</a> · <a href="/login">Login</a></p>
+
+<script>
+(function () {
+    var STORAGE_KEY = 'salonChatAppointmentId';
+    var params = new URLSearchParams(window.location.search);
+    var urlAppointmentId = params.get('appointmentId');
+    var selectedAppointmentId = null;
+
+    var statusEl = document.getElementById('status');
+    var metaEl = document.getElementById('thread-meta');
+    var headlineEl = document.getElementById('chat-headline');
+    var pickerWrap = document.getElementById('booking-picker-wrap');
+    var picker = document.getElementById('booking-picker');
+    var box = document.getElementById('messages');
+    var input = document.getElementById('msg-input');
+    var btnSend = document.getElementById('btn-send');
+    var form = document.getElementById('composer-form');
+
+    function optionId(o) {
+        return o.appointmentId != null ? o.appointmentId : o.appointment_id;
+    }
+
+    function optionLabel(o) {
+        return o.label != null ? o.label : '';
+    }
+
+    function idsMatch(a, b) {
+        return String(a) === String(b);
+    }
+
+    function syncUrl() {
+        if (!selectedAppointmentId) return;
+        var next = '/chat?appointmentId=' + encodeURIComponent(selectedAppointmentId);
+        if (window.location.pathname + window.location.search !== next) {
+            history.replaceState(null, '', next);
+        }
+    }
+
+    function threadUrl() {
+        if (!selectedAppointmentId) return null;
+        return '/api/chat/thread?appointmentId=' + encodeURIComponent(selectedAppointmentId);
+    }
+
+    function sendUrl() {
+        if (!selectedAppointmentId) return null;
+        return '/api/chat/thread/messages?appointmentId=' + encodeURIComponent(selectedAppointmentId);
+    }
+
+    function fromMeFlag(m) {
+        return m.fromMe === true || m.from_me === true;
+    }
+
+    function msgText(m) {
+        return m.text != null ? m.text : m.content;
+    }
+
+    function msgTime(m) {
+        return m.sentAt || m.sent_at || '';
+    }
+
+    /** Parse server datetime (ISO / JDBC local) and show locale-friendly date + time */
+    function formatReadableDateTime(raw) {
+        if (raw == null || raw === '') return '';
+        var s = String(raw).trim();
+        if (!s) return '';
+        var normalized = s.indexOf('T') >= 0 ? s : s.replace(/^(\d{4}-\d{2}-\d{2}) /, '$1T');
+        var d = new Date(normalized);
+        if (isNaN(d.getTime())) return s;
+        try {
+            return new Intl.DateTimeFormat(undefined, {
+                month: 'short',
+                day: 'numeric',
+                year: 'numeric',
+                hour: 'numeric',
+                minute: '2-digit'
+            }).format(d);
+        } catch (e) {
+            return s;
+        }
+    }
+
+    function renderThread(data) {
+        statusEl.textContent = '';
+        var peer = data.peerName || data.peer_name || 'Other person';
+        var apptSummary = data.appointmentSummary || data.appointment_summary || '';
+        headlineEl.textContent = data.headline || ('Chat with provider ' + peer);
+        metaEl.innerHTML = '<strong>Chat with:</strong> ' + escapeHtml(peer) +
+            '<br/><span style="font-size:0.9rem;">' + escapeHtml(apptSummary) + '</span>';
+
+        box.innerHTML = '';
+        (data.messages || []).forEach(function (m) {
+            var mine = fromMeFlag(m);
+            var row = document.createElement('div');
+            row.className = 'msg-row ' + (mine ? 'mine' : 'theirs');
+            row.setAttribute('aria-label', mine ? 'Your message' : ('Message from ' + peer));
+
+            var inner = document.createElement('div');
+            inner.className = 'msg-bubble ' + (mine ? 'mine' : 'theirs');
+
+            var label = document.createElement('div');
+            label.className = 'sender-label';
+            label.textContent = mine ? 'You' : peer;
+
+            var body = document.createElement('div');
+            body.className = 'bubble-body';
+            body.textContent = msgText(m);
+
+            var t = msgTime(m);
+            var displayTime = formatReadableDateTime(t);
+
+            inner.appendChild(label);
+            inner.appendChild(body);
+            if (displayTime) {
+                var time = document.createElement('div');
+                time.className = 'bubble-time';
+                time.textContent = displayTime;
+                inner.appendChild(time);
+            }
+            row.appendChild(inner);
+            box.appendChild(row);
+        });
+        box.scrollTop = box.scrollHeight;
+        input.disabled = false;
+        btnSend.disabled = false;
+    }
+
+    function escapeHtml(s) {
+        if (!s) return '';
+        var d = document.createElement('div');
+        d.textContent = s;
+        return d.innerHTML;
+    }
+
+    function loadThread() {
+        var tu = threadUrl();
+        if (!tu) {
+            statusEl.textContent = 'Choose a booking above to load messages.';
+            headlineEl.textContent = '';
+            metaEl.textContent = '';
+            box.innerHTML = '';
+            input.disabled = true;
+            btnSend.disabled = true;
+            return;
+        }
+        statusEl.textContent = 'Loading…';
+        headlineEl.textContent = '';
+        input.disabled = true;
+        btnSend.disabled = true;
+        fetch(tu, { credentials: 'same-origin' })
+            .then(function (r) {
+                return r.text().then(function (t) {
+                    if (!r.ok) {
+                        statusEl.textContent = t || ('Could not open chat (HTTP ' + r.status + ').');
+                        headlineEl.textContent = '';
+                        metaEl.textContent = '';
+                        box.innerHTML = '';
+                        return;
+                    }
+                    try {
+                        renderThread(JSON.parse(t));
+                    } catch (e) {
+                        statusEl.textContent = 'Invalid response from server.';
+                    }
+                });
+            })
+            .catch(function (e) {
+                statusEl.textContent = 'Network error: ' + e;
+            });
+    }
+
+    form.addEventListener('submit', function (ev) {
+        ev.preventDefault();
+        var su = sendUrl();
+        if (!su) return;
+        var text = (input.value || '').trim();
+        if (!text) return;
+        input.disabled = true;
+        btnSend.disabled = true;
+        fetch(su, {
+            method: 'POST',
+            credentials: 'same-origin',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ content: text })
+        })
+            .then(function (r) {
+                if (!r.ok) {
+                    return r.text().then(function (t) {
+                        statusEl.textContent = t || ('Send failed (HTTP ' + r.status + ').');
+                    });
+                }
+                input.value = '';
+                loadThread();
+            })
+            .catch(function (e) {
+                statusEl.textContent = 'Network error: ' + e;
+                input.disabled = false;
+                btnSend.disabled = false;
+            });
+    });
+
+    picker.addEventListener('change', function () {
+        var v = picker.value;
+        if (!v) return;
+        selectedAppointmentId = v;
+        try {
+            sessionStorage.setItem(STORAGE_KEY, v);
+        } catch (e) { /* ignore */ }
+        syncUrl();
+        loadThread();
+    });
+
+    function bootstrapChat() {
+        statusEl.textContent = 'Loading bookings…';
+        headlineEl.textContent = '';
+        metaEl.textContent = '';
+        box.innerHTML = '';
+        input.disabled = true;
+        btnSend.disabled = true;
+        picker.innerHTML = '';
+        pickerWrap.style.display = 'none';
+
+        fetch('/api/chat/booking-options', { credentials: 'same-origin' })
+            .then(function (r) {
+                return r.text().then(function (t) {
+                    if (!r.ok) {
+                        statusEl.textContent = t || ('Could not load bookings (HTTP ' + r.status + ').');
+                        return;
+                    }
+                    var options;
+                    try {
+                        options = JSON.parse(t);
+                    } catch (e) {
+                        statusEl.textContent = 'Invalid booking list from server.';
+                        return;
+                    }
+                    if (!options || options.length === 0) {
+                        statusEl.textContent = 'No active bookings yet. Book an appointment, then open Messages again.';
+                        return;
+                    }
+
+                    var idSet = {};
+                    options.forEach(function (o) {
+                        idSet[String(optionId(o))] = true;
+                    });
+
+                    var chosen = null;
+                    if (urlAppointmentId && idSet[String(urlAppointmentId)]) {
+                        chosen = String(urlAppointmentId);
+                    }
+                    if (!chosen) {
+                        try {
+                            var stored = sessionStorage.getItem(STORAGE_KEY);
+                            if (stored && idSet[String(stored)]) {
+                                chosen = String(stored);
+                            }
+                        } catch (e) { /* ignore */ }
+                    }
+                    if (!chosen) {
+                        chosen = String(optionId(options[0]));
+                    }
+
+                    selectedAppointmentId = chosen;
+                    try {
+                        sessionStorage.setItem(STORAGE_KEY, chosen);
+                    } catch (e) { /* ignore */ }
+
+                    options.forEach(function (o) {
+                        var opt = document.createElement('option');
+                        opt.value = String(optionId(o));
+                        opt.textContent = optionLabel(o);
+                        picker.appendChild(opt);
+                    });
+                    picker.value = chosen;
+
+                    if (options.length > 1) {
+                        pickerWrap.style.display = 'block';
+                    } else {
+                        pickerWrap.style.display = 'none';
+                    }
+
+                    syncUrl();
+                    loadThread();
+                });
+            })
+            .catch(function (e) {
+                statusEl.textContent = 'Network error: ' + e;
+            });
+    }
+
+    bootstrapChat();
+})();
+</script>
+</body>
+</html>
