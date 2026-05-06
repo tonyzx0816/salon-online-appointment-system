@@ -3,15 +3,10 @@
 <body>
 <h1>Book Your Appointment</h1>
 <p>You are booking Slot ID: <span th:text="${slotId}">0</span></p>
+<p>You must be signed in. Booking is linked to your logged-in account.</p>
 
 <form action="/book" method="post">
     <input name="slotId" th:value="${slotId}" type="hidden"/>
-    <label>Your Name:</label>
-    <input name="customerName" required type="text"/>
-    <br><br>
-    <label>Your Email:</label>
-    <input name="customerEmail" required type="email"/>
-    <br><br>
     <button type="submit">Confirm Booking</button>
 </form>
 

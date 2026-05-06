@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<body>
+<h1>Reschedule appointment</h1>
+
+<p th:if="${appointment != null}">
+    Pick a new time with the <strong>same provider</strong>. Your service may change if the new slot is for a different offering.
+</p>
+
+<p th:if="${#lists.isEmpty(slots)}">No open times left with this provider. Try again later or cancel and book elsewhere.</p>
+
+<table th:if="${!#lists.isEmpty(slots)}" border="1" cellpadding="6" cellspacing="0">
+    <tr>
+        <th>Service</th>
+        <th>Start</th>
+        <th>End</th>
+        <th></th>
+    </tr>
+    <tr th:each="slot : ${slots}">
+        <td th:text="${slot.serviceName}">Haircut</td>
+        <td th:text="${slot.startTime}">Start</td>
+        <td th:text="${slot.endTime}">End</td>
+        <td>
+            <form th:action="@{/appointments/reschedule}" method="post" style="display:inline;">
+                <input type="hidden" name="appointmentId" th:value="${appointment.appointmentId}"/>
+                <input type="hidden" name="newSlotId" th:value="${slot.slotId}"/>
+                <button type="submit">Choose this time</button>
+            </form>
+        </td>
+    </tr>
+</table>
+
+<br>
+<a th:href="@{/appointments}">Back to appointments</a>
+</body>
+</html>

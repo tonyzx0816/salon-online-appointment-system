@@ -1,68 +1,51 @@
 <!DOCTYPE html>
 <html xmlns:th="http://www.thymeleaf.org">
 <body>
-<h1>Appointments</h1>
+<h1>My appointments</h1>
 
-<table border="1">
+<p th:if="${message}" th:text="${message}" style="color:#1b5e20;"></p>
+<p th:if="${error}" th:text="${error}" style="color:#b00020;"></p>
+
+<p th:if="${customerView}">
+    Cancel or reschedule applies only to upcoming <strong>BOOKED</strong> visits, and rescheduling stays with the same provider.
+</p>
+<p th:unless="${customerView}">
+    Showing bookings for your provider profile (read-only).
+</p>
+
+<table border="1" cellpadding="6" cellspacing="0">
     <tr>
-        <th>ID</th>
-        <th>Customer ID</th>
-        <th>Provider ID</th>
-        <th>Service ID</th>
+        <th th:if="${customerView}">Provider</th>
+        <th th:unless="${customerView}">Customer</th>
+        <th>Service</th>
         <th>Start</th>
         <th>End</th>
         <th>Status</th>
-        <th>Mock notify</th>
+        <th th:if="${customerView}">Actions</th>
     </tr>
-    <tr th:each="appt : ${appointments}">
-        <td th:text="${appt.appointmentId}">1</td>
-        <td th:text="${appt.customerId}">1</td>
-        <td th:text="${appt.providerId}">1</td>
-        <td th:text="${appt.serviceId}">1</td>
-        <td th:text="${appt.startTime}">Time</td>
-        <td th:text="${appt.endTime}">Time</td>
-        <td th:text="${appt.status}">BOOKED</td>
-        <td>
-            <button type="button" class="btn-mock-notify" th:attr="data-appointment-id=${appt.appointmentId}">
-                POST → mock vendor
-            </button>
+    <tr th:each="row : ${rows}">
+        <td th:if="${customerView}" th:text="${row.providerName}">Provider</td>
+        <td th:unless="${customerView}" th:text="${row.customerName}">Customer</td>
+        <td th:text="${row.serviceName}">Service</td>
+        <td th:text="${row.startTime}">Start</td>
+        <td th:text="${row.endTime}">End</td>
+        <td th:text="${row.status}">BOOKED</td>
+        <td th:if="${customerView}">
+            <span th:if="${row.canCancelOrReschedule}">
+                <form th:action="@{/appointments/cancel}" method="post" style="display:inline;">
+                    <input type="hidden" name="appointmentId" th:value="${row.appointmentId}"/>
+                    <button type="submit" onclick="return confirm('Cancel this appointment?');">Cancel</button>
+                </form>
+                <a th:href="@{/appointments/reschedule(appointmentId=${row.appointmentId})}">Reschedule</a>
+            </span>
+            <span th:unless="${row.canCancelOrReschedule}">—</span>
         </td>
     </tr>
 </table>
 
-<p><strong>Last response:</strong></p>
-<pre id="appointments-notify-result" style="background:#f5f5f5;padding:8px;max-width:40rem;white-space:pre-wrap;">(none yet)</pre>
+<p th:if="${#lists.isEmpty(rows)}">No appointments yet.</p>
 
 <br>
-<a href="/">Back to Home</a>
-<script>
-(function () {
-    var out = document.getElementById('appointments-notify-result');
-    document.querySelectorAll('.btn-mock-notify').forEach(function (btn) {
-        btn.addEventListener('click', function () {
-            var id = btn.getAttribute('data-appointment-id');
-            out.textContent = 'Calling /api/appointments/' + id + '/confirmation-notification …';
-            fetch('/api/appointments/' + id + '/confirmation-notification', { method: 'POST' })
-                .then(function (r) {
-                    return r.text().then(function (t) {
-                        if (!r.ok) {
-                            out.textContent = 'HTTP ' + r.status + '\n' + t;
-                            return;
-                        }
-                        try {
-                            out.textContent = JSON.stringify(JSON.parse(t), null, 2);
-                        } catch (e) {
-                            out.textContent = t;
-                        }
-                    });
-                })
-                .catch(function (e) {
-                    out.textContent = 'Request failed: ' + e;
-                });
-        });
-    });
-})();
-</script>
+<a href="/">Home</a> · <a href="/slots">Book a slot</a>
 </body>
 </html>
-

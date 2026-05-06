@@ -1,7 +1,28 @@
 <!DOCTYPE html>
-<html>
+<html xmlns:th="http://www.thymeleaf.org">
 <body>
 <h1>Salon Online Appointment System</h1>
-<a href="/slots">View Available Slots</a>
+
+<div th:unless="${loggedIn}">
+    <p>Welcome. Sign in or create an account to book and message your provider.</p>
+    <a href="/login">Login</a>
+    <br><br>
+    <a href="/signup">Sign Up</a>
+</div>
+
+<div th:if="${loggedIn}">
+    <p th:if="${greetingName != null}">
+        Hello <span th:text="${greetingName}">Name</span>
+    </p>
+    <form method="post" th:action="@{/logout}">
+        <button type="submit">Logout</button>
+    </form>
+    <br>
+    <a href="/slots">View Available Slots</a>
+    <br><br>
+    <a href="/appointments">My appointments</a>
+    <br><br>
+    <a href="/chat">Messages</a>
+</div>
 </body>
 </html>

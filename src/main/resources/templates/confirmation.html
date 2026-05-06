@@ -9,42 +9,36 @@
     <p>Start: <span th:text="${appointment.startTime}">start</span></p>
     <p>End: <span th:text="${appointment.endTime}">end</span></p>
     <p>
-        <button type="button"
-                th:attr="data-appointment-id=${appointment.appointmentId}"
-                id="btn-test-notification">
-            Test mock external notification (HTTP)
-        </button>
+        Email notification:
+        <strong th:text="${notificationStatus != null ? notificationStatus : 'UNKNOWN'}">UNKNOWN</strong>
     </p>
-    <pre id="notification-result" style="background:#f5f5f5;padding:8px;max-width:40rem;white-space:pre-wrap;"></pre>
+    <p style="max-width:40rem;color:#0a5;" th:if="${notificationStatus == 'SENT'}">
+        A confirmation email was sent to
+        <strong th:text="${customerAccountEmail != null ? customerAccountEmail : 'your signup email'}">you@example.com</strong>
+        — the email on your account from when you signed up.
+    </p>
+    <div style="max-width:44rem;color:#a00;" th:if="${notificationStatus == 'FAILED'}">
+        <p>The confirmation email could not be sent.</p>
+        <p th:if="${notificationFailureReason != null}">
+            <strong>Server message:</strong>
+            <span style="white-space:pre-wrap;" th:text="${notificationFailureReason}">…</span>
+        </p>
+        <p th:if="${notificationFailureReason == null}">
+            Check the server console log. Common fixes: set <code>SPRING_MAIL_USERNAME</code> and
+            <code>SPRING_MAIL_PASSWORD</code> (Gmail needs an <em>App Password</em>, not your normal password),
+            run with profile <code>local</code> if you use <code>application-local.properties</code>, and set
+            <code>APP_MAIL_FROM</code> to the same mailbox as your Gmail sender.
+        </p>
+    </div>
+    <p th:if="${notificationId != null}">
+        Notification ID: <span th:text="${notificationId}">ext-123</span>
+    </p>
+    <p>
+        <a th:href="@{/chat(appointmentId=${appointment.appointmentId})}">
+            Message your provider
+        </a>
+    </p>
 </div>
 <a href="/">Return to Home</a>
-<script th:if="${appointment != null}">
-(function () {
-    var btn = document.getElementById('btn-test-notification');
-    var out = document.getElementById('notification-result');
-    if (!btn || !out) return;
-    btn.addEventListener('click', function () {
-        var id = btn.getAttribute('data-appointment-id');
-        out.textContent = 'Calling /api/appointments/' + id + '/confirmation-notification …';
-        fetch('/api/appointments/' + id + '/confirmation-notification', { method: 'POST' })
-            .then(function (r) {
-                return r.text().then(function (t) {
-                    if (!r.ok) {
-                        out.textContent = 'HTTP ' + r.status + '\n' + t;
-                        return;
-                    }
-                    try {
-                        out.textContent = JSON.stringify(JSON.parse(t), null, 2);
-                    } catch (e) {
-                        out.textContent = t;
-                    }
-                });
-            })
-            .catch(function (e) {
-                out.textContent = 'Request failed: ' + e;
-            });
-    });
-})();
-</script>
 </body>
 </html>
