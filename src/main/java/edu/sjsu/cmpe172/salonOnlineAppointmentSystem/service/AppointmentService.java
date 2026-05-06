@@ -1,7 +1,14 @@
 package edu.sjsu.cmpe172.salonOnlineAppointmentSystem.service;
 
+import edu.sjsu.cmpe172.salonOnlineAppointmentSystem.dto.AppointmentListRow;
 import edu.sjsu.cmpe172.salonOnlineAppointmentSystem.entity.AppointmentEntity;
+import edu.sjsu.cmpe172.salonOnlineAppointmentSystem.entity.ProviderEntity;
+import edu.sjsu.cmpe172.salonOnlineAppointmentSystem.entity.ServiceEntity;
+import edu.sjsu.cmpe172.salonOnlineAppointmentSystem.entity.UserEntity;
 import edu.sjsu.cmpe172.salonOnlineAppointmentSystem.repository.AppointmentRepository;
+import edu.sjsu.cmpe172.salonOnlineAppointmentSystem.repository.ProviderRepository;
+import edu.sjsu.cmpe172.salonOnlineAppointmentSystem.repository.ServiceRepository;
+import edu.sjsu.cmpe172.salonOnlineAppointmentSystem.repository.UserRepository;
 import io.micrometer.core.instrument.Counter;
 import io.micrometer.core.instrument.MeterRegistry;
 import io.micrometer.core.instrument.Timer;
@@ -9,6 +16,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
@@ -19,6 +27,9 @@ public class AppointmentService {
 
     private final AppointmentRepository appointmentRepository;
     private final AppointmentBookingTxService bookingTxService;
+    private final ProviderRepository providerRepository;
+    private final ServiceRepository serviceRepository;
+    private final UserRepository userRepository;
     private final Counter bookingSuccessCounter;
     private final Counter bookingFailureCounter;
     private final Timer bookingLatencyTimer;
@@ -26,10 +37,16 @@ public class AppointmentService {
     public AppointmentService(
             AppointmentRepository appointmentRepository,
             AppointmentBookingTxService bookingTxService,
+            ProviderRepository providerRepository,
+            ServiceRepository serviceRepository,
+            UserRepository userRepository,
             MeterRegistry meterRegistry
     ) {
         this.appointmentRepository = appointmentRepository;
         this.bookingTxService = bookingTxService;
+        this.providerRepository = providerRepository;
+        this.serviceRepository = serviceRepository;
+        this.userRepository = userRepository;
         this.bookingSuccessCounter = meterRegistry.counter("booking_requests_total", "result", "success");
         this.bookingFailureCounter = meterRegistry.counter("booking_requests_total", "result", "failure");
         this.bookingLatencyTimer = Timer.builder("booking_latency_ms")
@@ -133,5 +150,52 @@ public class AppointmentService {
         List<AppointmentEntity> out = new ArrayList<>();
         appointmentRepository.findAll().forEach(out::add);
         return out;
+    }
+
+    public List<AppointmentListRow> listHistoryForUser(UserEntity user) {
+        List<AppointmentEntity> appts = switch (user.role()) {
+            case CUSTOMER -> appointmentRepository.findByCustomerIdOrderByStartTimeDesc(user.userId());
+            case PROVIDER -> providerRepository.findByUserId(user.userId())
+                    .map(p -> appointmentRepository.findByProviderIdOrderByStartTimeDesc(p.providerId()))
+                    .orElse(List.of());
+            default -> List.of();
+        };
+        LocalDateTime now = LocalDateTime.now();
+        List<AppointmentListRow> rows = new ArrayList<>();
+        for (AppointmentEntity a : appts) {
+            rows.add(toListRow(a, now));
+        }
+        return rows;
+    }
+
+    private AppointmentListRow toListRow(AppointmentEntity a, LocalDateTime now) {
+        String providerName = providerRepository.findById(a.providerId())
+                .map(ProviderEntity::displayName)
+                .orElse("—");
+        String customerName = userRepository.findById(a.customerId())
+                .map(UserEntity::name)
+                .orElse("—");
+        String serviceName = serviceRepository.findById(a.serviceId())
+                .map(ServiceEntity::name)
+                .orElse("—");
+        boolean canModify = a.status() == AppointmentEntity.Status.BOOKED && a.startTime().isAfter(now);
+        return new AppointmentListRow(
+                a.appointmentId(),
+                providerName,
+                customerName,
+                serviceName,
+                a.startTime(),
+                a.endTime(),
+                a.status(),
+                canModify
+        );
+    }
+
+    public void cancelForCustomer(Integer appointmentId, int customerUserId) {
+        bookingTxService.cancelBooked(appointmentId, customerUserId);
+    }
+
+    public AppointmentEntity rescheduleForCustomer(Integer appointmentId, Integer newSlotId, int customerUserId) {
+        return bookingTxService.rescheduleBooked(appointmentId, newSlotId, customerUserId);
     }
 }
