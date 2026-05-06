@@ -1,6 +1,7 @@
 package edu.sjsu.cmpe172.salonOnlineAppointmentSystem.entity;
 
 import org.springframework.data.annotation.Id;
+import org.springframework.data.relational.core.mapping.Column;
 import org.springframework.data.relational.core.mapping.Table;
 
 import java.time.LocalDateTime;
@@ -9,6 +10,7 @@ import java.time.LocalDateTime;
 public record UserEntity(
         @Id
         Integer userId,
+        @Column("name")
         String name,
         String email,
         String phone,
